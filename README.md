@@ -6,7 +6,6 @@ Fly the bird through the pipes and try to beat your highest score!
 ### 🚀 [Live Demo](https://shivanijwork.github.io/FlappyBird/)
 
 ![Flappy Bird Screenshot](FlappyBird_Screenshot.png)  
-<sub>_(Replace with an actual game screenshot named `screenshot.png` in the root folder.)_</sub>
 
 ---
 
