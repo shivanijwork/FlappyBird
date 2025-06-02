@@ -9,7 +9,9 @@ let birdWidth = 34;   //width/height ratio = 408/228 = 17/12
 let birdHeight = 24;
 let birdX = boardWidth / 8;
 let birdY = boardHeight / 2;
-let birdImg;
+// let birdImg;
+let birdImgs =[];
+let birdImgsIndex = 0; // Index to keep track of the current bird image
 
 let bird = {
     x: birdX,
@@ -36,6 +38,10 @@ let gameOver = false; // Flag to check if the game is over
 let score = 0;
 let highestScore = localStorage.getItem("flappyHighScore") || 0;
 
+let wingSound = new Audio('sfx_wing.wav');
+let hitSound = new Audio('sfx_hit.wav');
+let bgm = new Audio('bgm_mario.mp3');
+
 window.onload = function () {
     // Initialize the board
     board = document.getElementById("board");
@@ -48,10 +54,16 @@ window.onload = function () {
     // context.fillRect(bird.x, bird.y, bird.width, bird.height);
 
     //load the bird image
-    birdImg = new Image();
-    birdImg.src = 'flappybird.png';
-    birdImg.onload = function () {
-        context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
+    // birdImg = new Image();
+    // birdImg.src = 'flappybird.png';
+    // birdImg.onload = function () {
+    //     context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
+    // }
+
+    for (let i = 1; i <= 3; i++) {
+        let birdImg = new Image();
+        birdImg.src = `flappybird${i}.png`; // Assuming images are named flappybird1.png, flappybird2.png, flappybird3.png
+        birdImgs.push(birdImg);
     }
 
     // Load the pipe images
@@ -63,9 +75,12 @@ window.onload = function () {
 
     requestAnimationFrame(update);
     setInterval(placePipes, 1500); // Place pipes every 1.5 seconds
+    setInterval(animatedBird, 100); // Change bird image every 100ms
 
     document.addEventListener("keydown", moveBird);
     document.addEventListener("touchstart", moveBird); // For mobile devices
+    bgm.loop = true;
+    bgm.play();
 }
 
 function update() {
@@ -74,6 +89,8 @@ function update() {
         context.fillStyle = "red";
         context.font = "30px Arial";
         context.fillText("Game Over 😢", boardWidth / 4, boardHeight / 2);
+        bgm.pause(); // Stop the background music when the game is over
+        bgm.currentTime = 0; // Reset the background music to the beginning
         return;
     }
     // Clear the board
@@ -94,30 +111,24 @@ function update() {
         velocityY = 0;
     }
     velocityY += 0.2; // Gravity effect
-    context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
+    context.drawImage(birdImgs[birdImgsIndex], bird.x, bird.y, bird.width, bird.height);
+    // birdImgsIndex++;
+    // birdImgsIndex %= birdImgs.length; // Cycle through bird images 0 1 2 3 then back to 0 1 2 3
 
-    // if (bird.y + bird.height > boardHeight) {
-    // bird.y = boardHeight - bird.height; // Prevent the bird from going below the board
-    // velocityY = 0; // Stop downward movement when hitting the bottom
-    // gameOver = true; // End the game immediately
-    // context.fillStyle = "red";
-    // context.font = "30px Arial";
-    // context.fillText("Game Over 😢", boardWidth / 4, boardHeight / 2);
-    // return; // Stop further drawing and logic
-    // }
     // Draw the pipes
     for (let i = 0; i < pipeArray.length; i++) {
         let pipe = pipeArray[i];
         pipe.x += velocityX; // Move the pipe towards the left
         context.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height);
 
-        if(!pipe.passes && bird.x > pipe.x + pipe.width) {
+        if (!pipe.passes && bird.x > pipe.x + pipe.width) {
             pipe.passed = true; // Mark the pipe as passed
-            score+=0.5; // Increment score when the bird passes a pipe
+            score += 0.5; // Increment score when the bird passes a pipe
             pipe.passes = true; // Prevent multiple score increments for the same pipe
         }
         // Check for collision
         if (detectCollision(bird, pipe)) {
+            hitSound.play();
             gameOver = true; // Set game over flag if the bird collides with a pipe
         }
     }
@@ -177,14 +188,21 @@ function moveBird(event) {
         if (event.code === "Space" || event.code === "ArrowUp" || event.code === "KeyX") {
             // event.preventDefault(); // Prevent scrolling on space or arrow keys
             //jump
+            if (bgm.paused) {
+                bgm.play(); // Play the background music if it was paused
+            }
+            wingSound.play();
             velocityY = -6; // Set a negative velocity to make the bird jump up
         }
         if (event.type === "touchstart") {
-            event.preventDefault();
+            // event.preventDefault();
+            if (!bgm.paused) {
+                bgm.play(); // Play the background music if it was paused
+            }
+            wingSound.play();
             velocityY = -6;
         }
-        if(gameOver)
-        {
+        if (gameOver) {
             // Reset the game if it was over
             gameOver = false;
             score = 0;
@@ -200,4 +218,10 @@ function detectCollision(a, b) {
         a.y < b.y + b.height &&
         a.y + a.height > b.y;
 
+}
+
+function animatedBird() {
+    // Change the bird image every 100ms
+    birdImgsIndex++;
+    birdImgsIndex %= birdImgs.length; // Cycle through bird images 0 1 2 3 then back to 0 1 2 3
 }
